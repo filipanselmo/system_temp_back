@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Результаты анализа</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .card-img {
+            max-height: 150px;
+            object-fit: cover;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Система контроля</a>
+            <div class="d-flex">
+                <a href="/tasks" class="btn btn-outline-light me-2">Задания</a>
+                <a href="/create-task" class="btn btn-light">Создать задание</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h4 class="mb-0">Результаты обработки</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Превью</th>
+                                <th>Метка</th>
+                                <th>Confidence</th>
+                                <th>Координаты</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for photo in photos %}
+                                {% for result in paged_results.items %}
+                                    {% if result.photo_id == photo.id %}
+                                        <tr>
+                                            <td>
+                                                <img src="{{ url_for('uploaded_file', filename=photo.filename) }}"
+                                                     class="card-img rounded" alt="Preview">
+                                            </td>
+                                            <td>{{ result.label }}</td>
+                                            <td>{{ result.confidence|round(2) }}</td>
+                                            <td>
+                                                <small>
+                                                    X: {{ result.x_min|round(2) }} - {{ result.x_max|round(2) }}<br>
+                                                    Y: {{ result.y_min|round(2) }} - {{ result.y_max|round(2) }}
+                                                </small>
+                                            </td>
+                                            <td>{{ photo.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if paged_results.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('home', page=paged_results.prev_num) }}">
+                                    Назад
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Назад</span>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                Страница {{ paged_results.page }} из {{ paged_results.pages }}
+                            </span>
+                        </li>
+
+                        {% if paged_results.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('home', page=paged_results.next_num) }}">
+                                    Вперёд
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Вперёд</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
