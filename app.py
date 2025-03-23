@@ -6,16 +6,17 @@ from PIL import Image, ImageDraw
 import numpy as np
 import torch
 from torchvision import transforms
-from flask import Flask, render_template, send_from_directory, request, jsonify,redirect, url_for
+from flask import Flask, render_template, send_from_directory, request, jsonify,redirect, url_for,flash
 from flask_cors import CORS
-# from scipy import io
 from io import BytesIO
-
 from OptimizedYOLO import OptimizedYOLO
-from dbModels import db, DetectionResult, Photo, Planogram, ComplianceCheckResult, Embedding, Task, Shelf, Category
+from dbModels import db, DetectionResult, Photo, Planogram, ComplianceCheckResult, Embedding, Task, Shelf, Category, \
+    User
+from forms import LoginForm, AdminUserForm
 from gan import augment_image
 from triplet_net import TripletNet
 from flask_migrate import Migrate
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 
 app = Flask(__name__)
@@ -25,6 +26,52 @@ db.init_app(app)
 migrate = Migrate(app, db)
 yolo = OptimizedYOLO()
 triplet_net = TripletNet()
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('task_list'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            return redirect(url_for('task_list'))
+        flash('Неверный логин или пароль')
+    return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+@app.route('/admin/create-user', methods=['GET', 'POST'])
+@login_required
+def create_user():
+    if not current_user.is_admin:
+        os.abort(403)
+    form = AdminUserForm()
+    if form.validate_on_submit():
+        user = User(
+            username=form.username.data,
+            is_admin=form.is_admin.data
+        )
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Пользователь создан')
+        return redirect(url_for('admin_dashboard'))
+    return render_template('admin/create_user.html', form=form)
 
 
 # Расчет Intersection over Union
@@ -110,7 +157,9 @@ def draw_boxes(photo):
 
 @app.route('/')
 def home():
-    return redirect(url_for('task_list'))
+    if current_user.is_authenticated:
+        return redirect(url_for('task_list'))
+    return redirect(url_for('auth.login'))  # Перенаправляем на вход
 
 @app.route('/results')
 def results():
