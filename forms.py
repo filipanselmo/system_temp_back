@@ -20,3 +20,11 @@ class AdminUserForm(FlaskForm):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError('Имя пользователя уже занято')
+
+class EditUserForm(FlaskForm):
+    username = StringField('Логин', validators=[DataRequired()])
+    # email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Новый пароль')
+    is_admin = BooleanField('Администратор')
+    is_active = BooleanField('Активен')
+    submit = SubmitField('Сохранить')

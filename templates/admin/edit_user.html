@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block sub_breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Админ-панель</a></li>
+    <li class="breadcrumb-item active">Редактирование {{ user.username }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-warning text-white">
+            <h3 class="mb-0">Редактирование пользователя</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <!-- Поля формы -->
+                <div class="mb-3">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control", placeholder="Оставьте пустым для сохранения текущего пароля") }}
+                </div>
+                <div class="mb-3 form-check">
+                    {{ form.is_admin.label(class="form-check-label") }}
+                    {{ form.is_admin(class="form-check-input") }}
+                </div>
+                <div class="mb-3 form-check">
+                    {{ form.is_active.label(class="form-check-label") }}
+                    {{ form.is_active(class="form-check-input") }}
+                </div>
+                <div class="d-grid">
+                    {{ form.submit(class="btn btn-warning") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

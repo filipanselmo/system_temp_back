@@ -14,7 +14,7 @@ from io import BytesIO
 from OptimizedYOLO import OptimizedYOLO
 from dbModels import db, DetectionResult, Photo, Planogram, ComplianceCheckResult, Embedding, Task, Shelf, Category, \
     User
-from forms import LoginForm, AdminUserForm
+from forms import LoginForm, AdminUserForm, EditUserForm
 from gan import augment_image
 from triplet_net import TripletNet
 from flask_migrate import Migrate
@@ -89,6 +89,31 @@ def create_user():
             db.session.rollback()
             flash('Имя пользователя уже существует', 'danger')
     return render_template('admin/create_user.html', form=form)
+
+
+@app.route('/admin/edit-user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def edit_user(user_id):
+    if not current_user.is_admin:
+        os.abort(403)
+
+    user = User.query.get_or_404(user_id)
+    form = EditUserForm(obj=user)
+
+    if form.validate_on_submit():
+        user.username = form.username.data
+        # user.email = form.email.data
+        user.is_admin = form.is_admin.data
+        user.is_active = form.is_active.data
+
+        if form.password.data:
+            user.set_password(form.password.data)
+
+        db.session.commit()
+        flash('Пользователь обновлен', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('admin/edit_user.html', form=form, user=user)
 
 
 # Расчет Intersection over Union
