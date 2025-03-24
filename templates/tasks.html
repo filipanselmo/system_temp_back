@@ -1,7 +1,11 @@
 {% extends "base.html" %}
-
+ {% if not current_user.is_authenticated %}
+        <script>window.location.href = "{{ url_for('login') }}";</script>
+    {% endif %}
 {% block title %}Список заданий{% endblock %}
-
+{% block sub_breadcrumbs %}
+    <li class="breadcrumb-item active" aria-current="page">Задания</li>
+{% endblock %}
 {% block content %}
 <div class="container mt-4">
     <div class="card shadow">

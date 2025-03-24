@@ -2,6 +2,8 @@ import base64
 import logging
 import os
 import uuid
+from sqlite3 import IntegrityError
+
 from PIL import Image, ImageDraw
 import numpy as np
 import torch
@@ -55,22 +57,37 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+
+@app.route('/admin/dashboard')
+@login_required
+def admin_dashboard():
+    if not current_user.is_admin:
+        os.abort(403)
+    users = User.query.all()
+    return render_template('admin/dashboard.html', users=users)
+
 @app.route('/admin/create-user', methods=['GET', 'POST'])
 @login_required
 def create_user():
     if not current_user.is_admin:
         os.abort(403)
+
     form = AdminUserForm()
     if form.validate_on_submit():
-        user = User(
-            username=form.username.data,
-            is_admin=form.is_admin.data
-        )
-        user.set_password(form.password.data)
-        db.session.add(user)
-        db.session.commit()
-        flash('Пользователь создан')
-        return redirect(url_for('admin_dashboard'))
+        try:
+            user = User(
+                username=form.username.data,
+                is_admin=form.is_admin.data,
+                is_active=True
+            )
+            user.set_password(form.password.data)
+            db.session.add(user)
+            db.session.commit()
+            flash('Пользователь создан', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Имя пользователя уже существует', 'danger')
     return render_template('admin/create_user.html', form=form)
 
 
@@ -156,12 +173,14 @@ def draw_boxes(photo):
 
 
 @app.route('/')
+@login_required
 def home():
     if current_user.is_authenticated:
         return redirect(url_for('task_list'))
-    return redirect(url_for('auth.login'))  # Перенаправляем на вход
+    return redirect(url_for('login'))  # Перенаправляем на вход
 
 @app.route('/results')
+@login_required
 def results():
     page = request.args.get('page', 1, type=int)
     per_page = 10
@@ -357,6 +376,7 @@ def get_photos():
 
 
 @app.route('/tasks')
+@login_required
 def task_list():
     page = request.args.get('page', 1, type=int)
     per_page = 10
@@ -370,8 +390,16 @@ def task_list():
         pagination=tasks_pagination
     )
 
+@app.route('/task/<int:task_id>')
+@login_required
+def task_detail(task_id):
+    task = Task.query.get_or_404(task_id)
+    shelf = task.shelf
+    category = shelf.category if shelf else None
+    return render_template('task_detail.html', task=task, shelf=shelf, category=category)
 
 @app.route('/create-task', methods=['GET', 'POST'])
+@login_required
 def create_task():
     if request.method == 'POST':
         # Обработка существующего стеллажа

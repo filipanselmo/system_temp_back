@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-
+ {% if not current_user.is_authenticated %}
+        <script>window.location.href = "{{ url_for('login') }}";</script>
+    {% endif %}
 {% block title %}Создать задание на проверку{% endblock %}
 
 {% block styles %}
@@ -37,7 +39,10 @@
     }
 </style>
 {% endblock %}
-
+{% block sub_breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{{ url_for('task_list') }}">Задания</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Создание</li>
+{% endblock %}
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">

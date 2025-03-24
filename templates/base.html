@@ -2,34 +2,51 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Система контроля</title>
+    <title>{% block title %}Система контроля{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="#">Система контроля</a>
-            <div class="d-flex">
+            <a class="navbar-brand" href="{{ url_for('task_list') }}">Система контроля</a>
+            <div class="d-flex align-items-center">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light me-2">Выйти</a>
+                    <!-- Для авторизованных пользователей -->
+                    <span class="navbar-text me-3">
+                        Вы вошли как: {{ current_user.username }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                        <i class="bi bi-box-arrow-right"></i> Выйти
+                    </a>
                     {% if current_user.is_admin %}
-                        <a href="{{ url_for('create_user') }}" class="btn btn-light">Создать пользователя</a>
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light ms-2">
+                            <i class="bi bi-person"></i> Панель администратора
+                        </a>
                     {% endif %}
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-light me-2">Войти</a>
+                    <!-- Для гостей -->
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-light">
+                        <i class="bi bi-door-open"></i> Войти
+                    </a>
                 {% endif %}
             </div>
         </div>
     </nav>
-
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white py-2">
+        <li class="breadcrumb-item"><a href="{{ url_for('task_list') }}">Главная</a></li>
+        {% block sub_breadcrumbs %}{% endblock %}
+    </ol>
+</nav>
+{% endblock %}
     <div class="container mt-4">
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="alert alert-info">
-                    {% for message in messages %}
-                        {{ message }}
-                    {% endfor %}
-                </div>
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
             {% endif %}
         {% endwith %}
 
